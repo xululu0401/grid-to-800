@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>差几格到八百</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f3efe6; color: #2a2622; line-height: 1.6; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 20px 14px 40px; }
+  h1 { font-size: 26px; letter-spacing: 1px; }
+  .lead { color: #5c554c; font-size: 14px; margin: 4px 0 14px; }
+  .card { background: #fffdf8; border-radius: 10px; padding: 14px; border: 1px solid #ddd3c2; margin-bottom: 14px; min-width: 0; }
+  .card h2 { font-size: 15px; font-weight: 600; margin-bottom: 8px; overflow-wrap: anywhere; }
+  label { font-size: 12px; color: #5c554c; display: block; overflow-wrap: anywhere; }
+  input, textarea, select { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid #c4b8a4; border-radius: 6px; width: 100%; min-width: 0; background: #fff; font-variant-numeric: tabular-nums; }
+  textarea { resize: vertical; min-height: 190px; line-height: 1.7; }
+  .top { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 12px; }
+  .g2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .g2 > div { min-width: 0; }
+  .grp { font-size: 13px; font-weight: 600; color: #7a3b1d; margin: 10px 0 4px; }
+  .grp:first-child { margin-top: 0; }
+  .bad { border-color: #b3412f !important; background: #fff0ec !important; }
+  button { font: inherit; font-size: 13px; padding: 6px 11px; border-radius: 6px; border: 1px solid #7a3b1d; background: #7a3b1d; color: #fff; cursor: pointer; }
+  button.ghost { background: #fff; color: #7a3b1d; }
+  .presets, .dl { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .err { display: none; background: #fff0ec; border: 1px solid #ecb7aa; color: #8e2b1c; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; overflow-wrap: anywhere; }
+  .muted { color: #82796d; font-size: 12px; }
+  .verdict { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+  .stamp { display: inline-block; border: 3px solid #b3412f; color: #b3412f; border-radius: 8px; padding: 2px 10px; font-weight: 800; font-size: 18px; transform: rotate(-3deg); white-space: nowrap; }
+  .stamp.ok { border-color: #2f7a4f; color: #2f7a4f; } .stamp.edge { border-color: #b07a12; color: #b07a12; } .stamp.near { border-color: #c4561d; color: #c4561d; }
+  #big { font-size: 15px; color: #5c554c; overflow-wrap: anywhere; }
+  #big b { font-size: 24px; color: #2a2622; font-variant-numeric: tabular-nums; }
+  #sumTxt { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+  #facts { margin: 10px 0 0 18px; font-size: 13px; color: #5c554c; } #facts li { margin: 2px 0; overflow-wrap: anywhere; }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: #5c554c; margin-bottom: 8px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; vertical-align: -1px; margin-right: 4px; border: 1px solid #d79a86; }
+  .sheet { --cols: 20; --cell: 26px; display: grid; grid-template-columns: 34px repeat(var(--cols), var(--cell)); justify-content: start; border-top: 1px solid #d79a86; width: max-content; }
+  .sheet .rn { font-size: 10px; color: #a28d7a; text-align: right; padding-right: 4px; line-height: var(--cell); height: var(--cell); font-variant-numeric: tabular-nums; }
+  .sheet .c { height: var(--cell); width: var(--cell); border-right: 1px solid #e3b7a6; border-bottom: 1px solid #e3b7a6; display: flex; align-items: center; justify-content: center; font-size: calc(var(--cell) * 0.62); line-height: 1; position: relative; overflow: hidden; white-space: nowrap; }
+  .sheet .c.first { border-left: 1px solid #e3b7a6; }
+  .sheet .c.title { color: #7a3b1d; font-weight: 700; }
+  .sheet .c.pad { background: #f4ece0; }
+  .sheet .c.rule { background: #fde0d4; }
+  .sheet .c.sq { background: #fff2bf; }
+  .sheet .c.last { outline: 2px solid #2a2622; outline-offset: -2px; z-index: 1; }
+  .sheet .c.mark { box-shadow: inset -3px 0 0 #b3412f; }
+  .sheet .c.mark::after { content: attr(data-mark); position: absolute; right: 1px; bottom: 0; font-size: 8px; color: #b3412f; line-height: 1; }
+  .sheet .c.after { color: #b8ada0; }
+  .sheet .c .ex { font-size: 0.7em; letter-spacing: -2px; margin-left: -1px; }
+  .sheet .c.half { font-size: calc(var(--cell) * 0.42); letter-spacing: -0.5px; }
+  .sheet .c.w2a { justify-content: flex-end; } .sheet .c.w2b { justify-content: flex-start; }
+  .sheet .rowline { grid-column: 1 / -1; height: 20px; border-top: 3px solid #b3412f; position: relative; }
+  .sheet .rowline span { position: absolute; left: 36px; top: 0; background: #b3412f; color: #fff; font-size: 11px; padding: 0 6px; border-radius: 3px; line-height: 16px; white-space: nowrap; }
+  .sheetbox { overflow-x: auto; padding-bottom: 4px; }
+  .paras { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .paras th, .paras td { padding: 5px 6px; border-bottom: 1px solid #ece4d6; text-align: right; }
+  .paras th { color: #5c554c; font-weight: 600; font-size: 12px; white-space: nowrap; }
+  .paras td:nth-child(2), .paras th:nth-child(2) { text-align: left; overflow-wrap: anywhere; word-break: break-all; }
+  .tw { overflow-x: auto; }
+  #sugs { display: grid; gap: 8px; }
+  .sug { display: flex; gap: 10px; align-items: center; justify-content: space-between; border: 1px solid #ddd3c2; border-radius: 6px; padding: 8px 10px; }
+  .sug span { min-width: 0; overflow-wrap: anywhere; font-size: 14px; } .sug button { flex: none; }
+  .how { font-size: 13px; } .how p { margin: 6px 0; }
+  .chk { display: flex; gap: 6px; align-items: center; font-size: 13px; color: #2a2622; margin-top: 8px; }
+  .chk input { width: auto; }
+  @media (max-width: 760px) { .top { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 520px) { .sug { flex-direction: column; align-items: stretch; } #sumTxt { font-size: 15px; } .paras th, .paras td { padding: 4px 3px; font-size: 12px; } .hide-s { display: none; } .sheet { grid-template-columns: 24px repeat(var(--cols), var(--cell)); } .sheet .rowline span { left: 26px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>差几格到八百</h1>
+  <p class="lead">作文要求「不少于 800 字」，看的往往是稿纸写到了第几格，而不是汉字有几个。把作文贴进来，这里按稿纸的格子一格一格排出来：末格落在第几行第几格、离 800 格线还差多少、空着的格子是段首、段尾还是标点换行规则空出来的，以及另起一段能多出几格。默认例文是虚构的。</p>
+
+  <div class="card">
+    <div class="top">
+      <div>
+        <div class="grp">作文正文（一行一段，开头不用打空格）</div>
+        <textarea id="text" maxlength="6000" spellcheck="false"></textarea>
+        <p class="muted" id="textInfo"></p>
+      </div>
+      <div>
+        <div class="grp">题目（可不填）</div>
+        <input id="title" maxlength="30">
+        <label class="chk"><input type="checkbox" id="countTitle"> 标题行也算格（有的稿纸从第一行就开始数）</label>
+        <div class="grp">稿纸</div>
+        <div class="g2">
+          <div><label for="cols">每行格数</label><input id="cols" inputmode="numeric" maxlength="2"></div>
+          <div><label for="indent">段首空几格</label><input id="indent" inputmode="numeric" maxlength="1"></div>
+          <div><label for="target">要求不少于（格）</label><input id="target" inputmode="numeric" maxlength="4"></div>
+          <div><label for="limit">上限（格，没有填 0）</label><input id="limit" inputmode="numeric" maxlength="4"></div>
+        </div>
+      </div>
+    </div>
+    <div class="presets" id="presets"><button id="reset" class="ghost">恢复默认</button></div>
+  </div>
+
+  <div class="err" id="error"></div>
+
+  <div id="out">
+    <div class="card">
+      <div class="verdict"><span class="stamp" id="stamp"></span><span id="big"></span></div>
+      <div id="sumTxt"></div>
+      <ul id="facts"></ul>
+    </div>
+
+    <div class="card" id="sugCard">
+      <h2>改一样试试（点一下代回重算）</h2>
+      <div id="sugs"></div>
+    </div>
+
+    <div class="card">
+      <h2>排在稿纸上</h2>
+      <div class="legend"><span><i style="background:#f4ece0"></i>段首空格</span><span><i style="background:#fde0d4"></i>换行规则空出</span><span><i style="background:#fff2bf"></i>标点挤进行末</span><span><i style="background:#fff;outline:2px solid #2a2622;outline-offset:-2px"></i>末格</span><span><i style="background:#b3412f;border-color:#b3412f"></i>要求格数那一格</span></div>
+      <div class="sheetbox"><div class="sheet" id="sheet"></div></div>
+      <p class="muted" style="margin-top:6px">左边是计数行号（不算标题时标题行不编号）。红线在要求格数那一行下面。窄屏上稿纸可以左右滑动。</p>
+    </div>
+
+    <div class="card">
+      <h2>每一段</h2>
+      <div class="tw"><table class="paras" id="paras"></table></div>
+    </div>
+
+    <div class="card">
+      <h2>带走</h2>
+      <div class="dl">
+        <button id="dlPNG">结果卡 PNG</button><button id="dlCSV" class="ghost">CSV</button><button id="dlMD" class="ghost">Markdown</button><button id="dlJSON" class="ghost">JSON 备份</button>
+      </div>
+      <p class="muted" style="margin-top:6px">作文和设置自动存在这台设备的浏览器里，不上传。</p>
+    </div>
+  </div>
+
+  <div class="card how">
+    <h2>怎么排的</h2>
+    <p>每个汉字、每个全角标点占 1 格；省略号「……」、破折号「——」占 2 格，不拆到两行；阿拉伯数字和英文字母两个占 1 格。每段另起一行，段首空 2 格（可改）。</p>
+    <p>逗号、句号、问号、后引号这类不能写在行首的标点，轮到行首时挤进上一行最后一格；前引号、前书名号不能留在行末，轮到行末最后一格时这一格空着、移到下一行。句号紧挨着后引号（「。”」）合写一格。</p>
+    <p>「写到第几格」从正文第一行第一格往后数到最后一个字，中间的段首空格、段尾空着的格子都算进去。所以纯汉字不到 800，格子可能已经过了 800；反过来，分段多、段尾空得多，格数涨得也快。</p>
+    <p>边界：这是常见稿纸书写习惯的一个版本，不是任何考试的官方评分细则，各地各校的数法可能不同（比如标题算不算、标点算不算）；也不评价文章好坏。</p>
+  </div>
+</div>
+
+  <script>
+/* 差几格到八百 · 计算核心
+ * 场景：作文要求「不少于 800 字」，阅卷看的是稿纸上写到了哪一格，不是纯汉字个数。
+ *       同一篇文章，分段多少、标点落在哪、引号省略号怎么占格，都会让末格前后差几十格。
+ * 排格规则（常见稿纸书写习惯的一个版本，是设计选择，不是任何考试的官方评分细则）：
+ *   · 每个汉字、每个全角标点占 1 格；省略号「……」、破折号「——」占 2 格，不拆到两行。
+ *   · 阿拉伯数字、英文字母两个占 1 格（半角空格去掉）。
+ *   · 每段另起一行，段首空 indent 格（默认 2）。
+ *   · 不能出现在行首的标点（，。、；：？！ 和后引号、后括号、后书名号）如果轮到行首，挤进上一行末格，不另占格。
+ *   · 不能出现在行末的标点（前引号、前括号、前书名号）如果轮到行末最后一格，这一格空着，移到下一行开头。
+ *   · 省略号/破折号轮到只剩最后 1 格时，整组移到下一行（这一格空着）。
+ *   · 句末点号紧跟后引号（如「。”」）或后引号紧跟点号（如「”，」），两个合占 1 格。
+ *   · 标题（可不填）写在第一行居中；「标题算不算格」可选，默认不算。
+ * 「写到第几格」= 正文最后一个有字的格，从正文第一格（或标题行第一格）往后数，空格也算进去。 */
+(function (root) {
+  'use strict';
+  function Bad(message, field) { const e = new Error(message); e.field = field; return e; }
+  const KEYS = ['title', 'text', 'cols', 'target', 'limit', 'indent', 'countTitle'];
+  const MAX_TEXT = 6000, MAX_TITLE = 30;
+  const NOHEAD = '，。、；：？！）》」』”’〉】,.;:?!)';
+  const NOTAIL = '（《「『“‘〈【(';
+  const ENDMARK = '。？！，；：、';
+  const CLOSEQ = '”’」』';
+  const isHalf = (c) => /[A-Za-z0-9%.+\-_/#@&]/.test(c) && c.charCodeAt(0) < 128;
+  const isHan = (c) => /[\u3400-\u9fff\uf900-\ufaff]/.test(c);
+
+  function num(v, name, field, lo, hi) {
+    const t = String(v == null ? '' : v).trim();
+    if (!/^\d+$/.test(t)) throw Bad(name + '要写整数', field);
+    const x = +t;
+    if (x < lo || x > hi) throw Bad(name + '在 ' + lo + ' 到 ' + hi + ' 之间', field);
+    return x;
+  }
+
+  /* 一段文字 → 记号序列。每个记号 {s 文字, w 占格数 1/2, k 种类 han/punct/half/dash, nh 不能行首, nt 不能行末} */
+  function tokenize(p) {
+    const s = String(p).replace(/[ \t\u3000\u00a0]+/g, '');
+    const out = [];
+    let i = 0;
+    while (i < s.length) {
+      const c = s[i];
+      if (c === '…' || c === '—') {
+        let j = i; while (j < s.length && s[j] === c) j++;
+        let n = j - i; /* 每两个一组占 2 格；落单的一个也按一组算 */
+        while (n > 0) { const take = Math.min(2, n); out.push({ s: c.repeat(take), w: 2, k: 'dash', nh: false, nt: false }); n -= take; }
+        i = j; continue;
+      }
+      if (c === '.' && s.slice(i, i + 3) === '...') { let j = i; while (s[j] === '.') j++; out.push({ s: '……', w: 2, k: 'dash', nh: false, nt: false }); i = j; continue; }
+      if (isHalf(c) && !(NOHEAD.indexOf(c) >= 0 && !/[0-9A-Za-z]/.test(s[i + 1] || ''))) {
+        let j = i; while (j < s.length && isHalf(s[j]) && !(NOHEAD.indexOf(s[j]) >= 0 && !/[0-9A-Za-z]/.test(s[j + 1] || ''))) j++;
+        const run = s.slice(i, j);
+        for (let q = 0; q < run.length; q += 2) out.push({ s: run.slice(q, q + 2), w: 1, k: 'half', nh: false, nt: false });
+        i = j; continue;
+      }
+      const nh = NOHEAD.indexOf(c) >= 0, nt = NOTAIL.indexOf(c) >= 0;
+      const prev = out[out.length - 1];
+      /* 「。”」「”，」合占一格 */
+      if (prev && prev.k === 'punct' && prev.s.length === 1 && ((ENDMARK.indexOf(prev.s) >= 0 && CLOSEQ.indexOf(c) >= 0) || (CLOSEQ.indexOf(prev.s) >= 0 && ENDMARK.indexOf(c) >= 0))) {
+        prev.s += c; prev.nh = true; i++; continue;
+      }
+      out.push({ s: c, w: 1, k: isHan(c) ? 'han' : (nh || nt || /[\p{P}\p{S}]/u.test(c) ? 'punct' : 'han'), nh, nt });
+      i++;
+    }
+    return out;
+  }
+
+  function splitParas(text) { return String(text == null ? '' : text).split(/\r?\n/).map((l) => l.replace(/[ \t\u3000\u00a0]+/g, '')).filter(Boolean); }
+
+  function parse(inp) {
+    const o = inp || {};
+    const title = String(o.title == null ? '' : o.title).trim();
+    const text = String(o.text == null ? '' : o.text);
+    const D = {
+      cols: num(o.cols, '每行格数', 'cols', 10, 30),
+      target: num(o.target, '要求字数（格）', 'target', 100, 3000),
+      limit: num(o.limit, '字数上限（没有填 0）', 'limit', 0, 5000),
+      indent: num(o.indent, '段首空几格', 'indent', 0, 4),
+      countTitle: String(o.countTitle) === '1',
+      title, text,
+    };
+    if (D.limit > 0 && D.limit <= D.target) throw Bad('字数上限要大于要求字数（' + D.target + '），没有上限填 0', 'limit');
+    if (D.indent >= D.cols) throw Bad('段首空格要小于每行格数', 'indent');
+    if (text.length > MAX_TEXT) throw Bad('正文最多 ' + MAX_TEXT + ' 个字符（现在 ' + text.length + '）', 'text');
+    D.paras = splitParas(text);
+    if (!D.paras.length) throw Bad('先把作文贴进来：一行一段', 'text');
+    const tt = title ? tokenize(title) : [];
+    const tw = tt.reduce((a, t) => a + t.w, 0);
+    if (title.length > MAX_TITLE || tw > D.cols - 2) throw Bad('标题太长：要比每行格数少 2 格以上（现在占 ' + tw + ' 格，每行 ' + D.cols + ' 格）', 'title');
+    D.titleTokens = tt;
+    return D;
+  }
+
+  /* 排格。返回 rows：每行是长度 cols 的数组，元素 null（空格）或 {s, w, k, part, extra:[挤进来的标点], para}；
+   * w=2 的记号占两格：第一格 part=0，第二格 part=1。 */
+  function layout(D) {
+    const cols = D.cols, rows = [];
+    const newRow = () => { const r = new Array(cols).fill(null); rows.push(r); return r; };
+    const moves = []; /* 规则触发记录 */
+    let titleRow = -1;
+    if (D.titleTokens.length) {
+      const r = newRow(); titleRow = 0;
+      const tw = D.titleTokens.reduce((a, t) => a + t.w, 0);
+      let c = Math.floor((cols - tw) / 2);
+      D.titleTokens.forEach((t) => { r[c] = { s: t.s, w: t.w, k: t.k, part: 0, extra: [], para: -1 }; if (t.w === 2) { r[c + 1] = { s: t.s, w: 2, k: t.k, part: 1, extra: [], para: -1 }; } c += t.w; });
+    }
+    const paraInfo = [];
+    D.paras.forEach((p, pi) => {
+      const toks = tokenize(p);
+      let r = newRow(), c = 0;
+      const startRow = rows.length - 1;
+      for (let q = 0; q < D.indent; q++) c++;
+      let han = 0, punct = 0, half = 0, chars = 0;
+      toks.forEach((t) => {
+        if (t.k === 'han') han++; else if (t.k === 'half') half += t.s.length; else punct += t.s.length;
+        chars += t.s.length;
+        if (c >= cols) { r = newRow(); c = 0; }
+        if (t.nh && c === 0) {
+          const pr = rows[rows.length - 2];
+          const lastCell = pr && pr[cols - 1];
+          if (lastCell && lastCell.para === pi && lastCell.extra.length < 2) {
+            lastCell.extra.push(t.s);
+            moves.push({ type: 'squeeze', row: rows.length - 2, s: t.s, para: pi });
+            if (r.every((x) => !x)) { rows.pop(); r = rows[rows.length - 1]; c = cols; }
+            return;
+          }
+        }
+        if (t.nt && c === cols - 1) { moves.push({ type: 'pushdown', row: rows.length, s: t.s, para: pi }); r = newRow(); c = 0; }
+        if (t.w === 2 && c === cols - 1) { moves.push({ type: 'dashdown', row: rows.length, s: t.s, para: pi }); r = newRow(); c = 0; }
+        r[c] = { s: t.s, w: t.w, k: t.k, part: 0, extra: [], para: pi };
+        if (t.w === 2) r[c + 1] = { s: t.s, w: 2, k: t.k, part: 1, extra: [], para: pi };
+        c += t.w;
+      });
+      const endRow = rows.length - 1;
+      let lastCol = -1; const er = rows[endRow];
+      for (let q = cols - 1; q >= 0; q--) if (er[q]) { lastCol = q; break; }
+      paraInfo.push({ index: pi, han, punct, half, chars, tokens: toks.length, startRow, endRow, rowsUsed: endRow - startRow + 1, tailBlank: cols - 1 - lastCol, lastCol });
+    });
+    return { rows, titleRow, paraInfo, moves };
+  }
+
+  function measure(D, L) {
+    const cols = D.cols;
+    const off = L.titleRow === 0 && !D.countTitle ? 1 : 0; /* 不算标题时，从标题下一行开始数 */
+    const lastP = L.paraInfo[L.paraInfo.length - 1];
+    const endRow = lastP.endRow, endCol = lastP.lastCol;
+    const lastIdx = (endRow - off) * cols + endCol + 1;
+    let filled = 0;
+    L.rows.forEach((r, i) => { if (i < off) return; r.forEach((x) => { if (x) filled++; }); });
+    const blank = lastIdx - filled;
+    const han = L.paraInfo.reduce((a, p) => a + p.han, 0), punct = L.paraInfo.reduce((a, p) => a + p.punct, 0), half = L.paraInfo.reduce((a, p) => a + p.half, 0);
+    const titleHan = L.titleRow === 0 ? D.titleTokens.filter((t) => t.k === 'han').length : 0;
+    /* 第 target 格在第几行第几格（按正文/标题行起算） */
+    const markRow = Math.ceil(D.target / cols) + off, markCol = (D.target - 1) % cols + 1;
+    return { off, endRow, endCol, lastIdx, filled, blank, han, punct, half, titleHan, diff: lastIdx - D.target, markRow, markCol,
+      overLimit: D.limit > 0 ? lastIdx - D.limit : null, rowsTotal: L.rows.length };
+  }
+
+  function rowLabel(D, M, rowIdx) { return rowIdx - M.off + 1; } /* 计数行号（不算标题时标题行不编号） */
+
+  function calculate(inp) {
+    const D = parse(inp);
+    const L = layout(D);
+    const M = measure(D, L);
+    const pos = '第 ' + (M.endRow - M.off + 1) + ' 行第 ' + (M.endCol + 1) + ' 格';
+    let verdict, stamp;
+    if (M.overLimit != null && M.overLimit > 0) { verdict = 'over'; stamp = '超了上限'; }
+    else if (M.diff >= 0 && M.diff < D.cols) { verdict = 'edge'; stamp = '刚过线'; }
+    else if (M.diff >= 0) { verdict = 'ok'; stamp = '过线了'; }
+    else if (-M.diff <= D.cols) { verdict = 'near'; stamp = '差一行之内'; }
+    else { verdict = 'short'; stamp = '还不够'; }
+    const blankWhy = blankBreakdown(D, L, M);
+    let summary;
+    if (verdict === 'over') summary = '写到了' + pos + '，第 ' + M.lastIdx + ' 格，比上限 ' + D.limit + ' 多 ' + M.overLimit + ' 格。';
+    else if (M.diff >= 0) summary = '写到了' + pos + '，第 ' + M.lastIdx + ' 格，过了 ' + D.target + ' 格线 ' + M.diff + ' 格。';
+    else summary = '写到了' + pos + '，第 ' + M.lastIdx + ' 格，离 ' + D.target + ' 格线还差 ' + (-M.diff) + ' 格。';
+    const facts = [];
+    facts.push('纯汉字 ' + M.han + ' 个' + (M.titleHan && D.countTitle ? '（不含标题）' : '') + '，标点 ' + M.punct + ' 个' + (M.half ? '，数字字母 ' + M.half + ' 个' : '') + '；数到末格一共 ' + M.lastIdx + ' 格，其中写了字的 ' + M.filled + ' 格、空着的 ' + M.blank + ' 格。');
+    facts.push('空着的 ' + M.blank + ' 格：' + blankWhy.text + '。');
+    if (M.diff < 0) facts.push('不改分段的话，最后一段再写 ' + (-M.diff) + ' 个字就到线（汉字一格一个，接着往后写）。');
+    facts.push(D.target + ' 格线在' + (M.off ? '标题下面' : '') + '第 ' + (M.markRow - M.off) + ' 行' + (M.markCol === D.cols ? '末格' : '第 ' + M.markCol + ' 格') + '（每行 ' + D.cols + ' 格）。');
+    const sq = L.moves.filter((x) => x.type === 'squeeze').length, pd = L.moves.filter((x) => x.type !== 'squeeze').length;
+    if (sq || pd) facts.push((sq ? sq + ' 处标点轮到行首，挤进了上一行末格' : '') + (sq && pd ? '；' : '') + (pd ? pd + ' 处前引号/书名号或省略号轮到行末，空一格移到下一行' : '') + '。');
+    return { D, L, M, verdict, stamp, summary, facts, pos, blankWhy };
+  }
+
+  /* 空格从哪来：段首空格、段尾空格、换行规则空出的格、标题行（算标题时） */
+  function blankBreakdown(D, L, M) {
+    const nP = L.paraInfo.length;
+    const indent = nP * D.indent;
+    const tail = L.paraInfo.slice(0, -1).reduce((a, p) => a + p.tailBlank, 0);
+    let titleBlank = 0;
+    if (M.off === 0 && L.titleRow === 0) titleBlank = L.rows[0].filter((x) => !x).length;
+    const rule = M.blank - indent - tail - titleBlank;
+    const parts = [];
+    if (indent) parts.push(nP + ' 段段首各空 ' + D.indent + ' 格共 ' + indent);
+    if (tail) parts.push('前 ' + (nP - 1) + ' 段段尾没写满 ' + tail);
+    if (titleBlank) parts.push('标题行空 ' + titleBlank);
+    if (rule) parts.push('换行规则空出 ' + rule);
+    return { indent, tail, titleBlank, rule, text: parts.length ? parts.join('，') : '没有' };
+  }
+
+  /* 段落拆点：段内句末（。？！ 以及它后面跟着的后引号）之后，且后面还有字 */
+  function splitPoints(text) {
+    const lines = String(text).split(/\r?\n/), pts = [];
+    let off = 0;
+    lines.forEach((ln) => {
+      const re = /[。？！][”’」』]?/g; let mt;
+      while ((mt = re.exec(ln))) { const at = mt.index + mt[0].length; if (ln.slice(at).replace(/[ \t\u3000\u00a0]/g, '').length) pts.push(off + at); }
+      off += ln.length + 1;
+    });
+    return pts;
+  }
+  const insertAt = (t, at) => t.slice(0, at) + '\n' + t.slice(at);
+  /* 合并点：每个换行（前后都有非空行） */
+  function mergePoints(text) {
+    const s = String(text), pts = [];
+    for (let i = 0; i < s.length; i++) if (s[i] === '\n' && s.slice(0, i).trim() && s.slice(i + 1).trim()) pts.push(i);
+    return pts;
+  }
+  const removeAt = (t, at) => t.slice(0, at) + t.slice(at + 1).replace(/^\r?\n+/, '');
+
+  function excerpt(text, at, n) { const before = String(text).slice(0, at).replace(/\s+/g, ''); return before.slice(-n); }
+
+  function sameInput(o) { const s = {}; KEYS.forEach((k) => { s[k] = String(o[k] == null ? '' : o[k]); }); return s; }
+  function lastIdxOf(inp) { try { return calculate(inp).M.lastIdx; } catch (e) { return null; } }
+  /* 拆一段能多出最多格的拆法（并列取最靠前的） */
+  function bestSplit(inp) {
+    let best = null;
+    const base = lastIdxOf(inp);
+    splitPoints(inp.text).forEach((at) => {
+      const a = Object.assign(sameInput(inp), { text: insertAt(inp.text, at) });
+      const v = lastIdxOf(a); if (v == null) return;
+      if (!best || v > best.v) best = { at, v, apply: a };
+    });
+    return best && best.v > base ? best : null;
+  }
+  /* 并一段能省最多格的并法 */
+  function bestMerge(inp) {
+    let best = null;
+    const base = lastIdxOf(inp);
+    mergePoints(inp.text).forEach((at) => {
+      const a = Object.assign(sameInput(inp), { text: removeAt(inp.text, at) });
+      const v = lastIdxOf(a); if (v == null) return;
+      if (!best || v < best.v) best = { at, v, apply: a };
+    });
+    return best && best.v < base ? best : null;
+  }
+
+  function after(R2, D) {
+    const M = R2.M;
+    if (M.overLimit != null && M.overLimit > 0) return '末格到第 ' + M.lastIdx + ' 格，还超上限 ' + M.overLimit + ' 格';
+    return M.diff >= 0 ? '末格到第 ' + M.lastIdx + ' 格，过线 ' + M.diff + ' 格' : '末格到第 ' + M.lastIdx + ' 格，还差 ' + (-M.diff) + ' 格';
+  }
+
+  /* 建议：每条只改一个输入，文字里的数字来自代回后的同一次计算 */
+  function suggestions(inp, R) {
+    const D = R.D, M = R.M, out = [];
+    const add = (id, a, mk) => { let R2; try { R2 = calculate(a); } catch (e) { return; } if (R2.M.lastIdx === M.lastIdx) return; out.push({ id, apply: a, text: mk(R2), verdict: R2.verdict, lastIdx: R2.M.lastIdx }); };
+    if (M.diff < 0) {
+      const b = bestSplit(inp);
+      if (b) add('split', b.apply, (R2) => '在「…' + excerpt(inp.text, b.at, 8) + '」后面另起一段：多出 ' + (R2.M.lastIdx - M.lastIdx) + ' 格，' + after(R2, D) + '。');
+    }
+    if (M.overLimit != null && M.overLimit > 0) {
+      const b = bestMerge(inp);
+      if (b) add('merge', b.apply, (R2) => '把「…' + excerpt(inp.text, b.at, 8) + '」那段和下一段并成一段：省 ' + (M.lastIdx - R2.M.lastIdx) + ' 格，' + after(R2, D) + '。');
+    }
+    if (D.title) add('title', Object.assign(sameInput(inp), { countTitle: D.countTitle ? '0' : '1' }), (R2) => (D.countTitle ? '要是标题行不算格：' : '要是标题行也算格（有的稿纸从第一行就开始数）：') + after(R2, D) + '。');
+    if (D.indent !== 2) add('indent', Object.assign(sameInput(inp), { indent: '2' }), (R2) => '段首按惯例空 2 格：' + after(R2, D) + '。');
+    return out;
+  }
+
+  /* 把排好的格子还原成文字，用来自检「一个字都没丢、顺序没乱」 */
+  function flatten(L) {
+    const s = [];
+    L.rows.forEach((r) => r.forEach((x) => { if (x && x.para >= 0) { if (x.part === 0) s.push(x.s); x.extra.forEach((e) => s.push(e)); } }));
+    return s.join('');
+  }
+
+  function csvCell(v) { const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  function toCSV(R, when) {
+    const D = R.D, M = R.M, L = [];
+    L.push(['差几格到八百', when].map(csvCell).join(','));
+    L.push(['每行格数', D.cols, '要求（格）', D.target, '上限（格）', D.limit || '无', '段首空格', D.indent, '标题算格', D.countTitle ? '是' : '否'].join(','));
+    L.push(['末格', M.lastIdx, '位置', R.pos, '与要求差', M.diff, '纯汉字', M.han, '标点', M.punct, '数字字母', M.half, '写了字的格', M.filled, '空格', M.blank].map(csvCell).join(','));
+    L.push('');
+    L.push(['段', '开头', '汉字', '标点', '数字字母', '起始行', '结束行', '占几行', '段尾空格'].join(','));
+    R.L.paraInfo.forEach((p) => L.push([p.index + 1, D.paras[p.index].slice(0, 10), p.han, p.punct, p.half, p.startRow - M.off + 1, p.endRow - M.off + 1, p.rowsUsed, p.index === R.L.paraInfo.length - 1 ? '' : p.tailBlank].map(csvCell).join(',')));
+    L.push('');
+    L.push(['结论', R.summary].map(csvCell).join(','));
+    R.facts.forEach((f) => L.push(['', f].map(csvCell).join(',')));
+    return L.join('\n') + '\n';
+  }
+  function toMD(R, when, sg) {
+    const D = R.D, M = R.M, L = [];
+    L.push('# 差几格到八百', '', '生成时间：' + when + '　结论：**' + R.stamp + '**', '', '> ' + R.summary, '');
+    R.facts.forEach((f) => L.push('- ' + f));
+    L.push('', '## 每一段', '', '| 段 | 开头 | 汉字 | 标点 | 占几行 | 段尾空格 |', '|---|---|---|---|---|---|');
+    R.L.paraInfo.forEach((p) => L.push('| ' + (p.index + 1) + ' | ' + D.paras[p.index].slice(0, 10).replace(/\|/g, '｜') + ' | ' + p.han + ' | ' + p.punct + ' | ' + p.rowsUsed + ' | ' + (p.index === R.L.paraInfo.length - 1 ? '—' : p.tailBlank) + ' |'));
+    if (sg && sg.length) { L.push('', '## 改一样试试', ''); sg.forEach((s) => L.push('- ' + s.text)); }
+    L.push('', '排格按常见稿纸书写习惯的一个版本，不是任何考试的官方评分细则；每行 ' + D.cols + ' 格、段首空 ' + D.indent + ' 格。默认例文是虚构的。');
+    return L.join('\n') + '\n';
+  }
+
+  const DEF_TEXT = [
+    '我家楼下有一间修车铺，门脸只有两米宽，招牌上的红漆掉了一半，只剩下“修车”两个字还看得清。铺子的主人姓周，街坊都叫他老周。',
+    '老周修车不看人。骑着新车来的年轻人，推着旧三轮来的老太太，他都是先蹲下来，把车翻过来，转一转轮子，听一听声音，再抬头说话。他说车会自己讲哪里不舒服，人只要肯听。',
+    '我第一次去，是因为自行车的链条掉了。那天下着小雨，我推着车站在门口，不好意思开口。老周看了我一眼，说：“进来，别淋着。”他用一块黑乎乎的布擦了擦手，三两下就把链条挂了回去，又顺手给车铃上了点油。我问多少钱，他摆摆手：“挂个链子，要什么钱。”',
+    '后来我才知道，铺子一年到头赚不了多少。房租涨了两回，隔壁的小饭馆换了三家老板，修车铺还开着。有人劝他改卖电动车，说那个来钱快。老周笑一笑，没接话，低头继续拧他的螺丝。',
+    '有一年冬天，下了一场很大的雪，路上的车都停了。第二天一早，我看见老周在铺子门口扫雪，从他的门口一直扫到公交站，扫出一条窄窄的小路。我问他扫这么远干什么，他说：“早上上学的孩子多，滑倒了可不好。”',
+    '我渐渐明白，老周守着的不只是一间铺子。街上的东西换得很快，奶茶店开了又关，手机一年一个样子，可总有一些人、一些地方，像钉子一样钉在原处，让一条街有了自己的样子。人们匆匆走过的时候，不一定会注意到它们；可要是哪天它们不在了，大家才会发现，心里空了一块。',
+    '去年我考上了外地的高中，走之前去铺子里道别。老周正在给一辆童车换轮子，听说我要走，停下手里的活，从抽屉里翻出一个小小的打气筒塞给我：“路上车胎瘪了，自己会打。”我把它放进书包最里面的夹层，一直带到现在。',
+    '如今每次放假回家，我都会绕到楼下看一眼。招牌上的字又掉了一些，老周的头发也白了不少，可那扇小门还是每天早上七点准时打开。我想，等我长大了，也要做一个这样的人：不一定走得多远，但站得住，守得住，让身边的人觉得踏实。',
+  ].join('\n');
+  const DEFAULT = { title: '楼下的修车铺', text: DEF_TEXT, cols: '20', target: '800', limit: '0', indent: '2', countTitle: '0' };
+  const PRESETS = [
+    ['默认：一篇 8 段的作文', DEFAULT],
+    ['同一篇并成 3 段', Object.assign({}, DEFAULT, { text: (function () { const p = DEF_TEXT.split('\n'); return [p.slice(0, 3).join(''), p.slice(3, 6).join(''), p.slice(6).join('')].join('\n'); })() })],
+    ['带数字英文和省略号', Object.assign({}, DEFAULT, { title: '2025 年的一张车票', cols: '20', target: '200', text: '那张 G1234 次的车票，我一直夹在日记本里……票面上印着 08:15 发车，二等座 12 车 6F。\n妈妈说：“到了就打电话。”我点点头，没有说话——那是我第一次一个人出远门。\n后来我才知道，她在站台上站了很久，直到车开出 500 米，还没有走。' })],
+    ['有字数上限（800–1000）', Object.assign({}, DEFAULT, { limit: '1000', cols: '20', text: DEF_TEXT + '\n' + DEF_TEXT.split('\n').slice(4, 6).join('\n') })],
+  ];
+  const api = { DEFAULT, PRESETS, KEYS, MAX_TEXT, MAX_TITLE, NOHEAD, NOTAIL, parse, tokenize, splitParas, layout, measure, calculate, suggestions, bestSplit, bestMerge, splitPoints, mergePoints, insertAt, removeAt, flatten, blankBreakdown, toCSV, toMD, rowLabel };
+  if (typeof module === 'object' && module.exports) module.exports = api; else root.AppCore = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+  </script>
+  <script>
+/* 差几格到八百 · 界面层 */
+(function () {
+  'use strict';
+  const C = window.AppCore;
+  const KEY = 'grid-to-800:v1';
+  const NAME = '差几格到八百';
+  const copy = (o) => JSON.parse(JSON.stringify(o));
+  const DEFAULT = C.DEFAULT, PRESETS = C.PRESETS, KEYS = C.KEYS;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const FF = '"PingFang SC","Microsoft YaHei",sans-serif';
+  const COL = { ok: '#2f7a4f', edge: '#b07a12', near: '#c4561d', short: '#b3412f', over: '#b3412f' };
+  let state = copy(DEFAULT);
+  let last = null;
+
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* 隐私模式忽略 */ } }
+  function load() {
+    try {
+      const o = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+      const s = {};
+      for (const k of KEYS) { if (o[k] == null || typeof o[k] === 'object') return null; s[k] = String(o[k]).slice(0, k === 'text' ? C.MAX_TEXT + 200 : 40); }
+      return s;
+    } catch (e) { return null; }
+  }
+  function fill() { KEYS.forEach((k) => { if (k === 'countTitle') $(k).checked = state[k] === '1'; else $(k).value = state[k]; }); }
+
+  function bigText(R) {
+    const M = R.M;
+    if (R.verdict === 'over') return '末格第 <b>' + M.lastIdx + '</b> 格，超上限 <b>' + M.overLimit + '</b> 格';
+    if (M.diff >= 0) return '末格第 <b>' + M.lastIdx + '</b> 格，过线 <b>' + M.diff + '</b> 格';
+    return '末格第 <b>' + M.lastIdx + '</b> 格，还差 <b>' + (-M.diff) + '</b> 格';
+  }
+  const plain = (h) => h.replace(/<[^>]+>/g, '');
+
+  /* 每格的种类：title / pad（段首）/ rule（换行规则空出）/ tail（段尾空）/ ch（有字） */
+  function cellKinds(R) {
+    const D = R.D, L = R.L, M = R.M, K = L.rows.map((r) => r.map((x) => (x ? (x.para < 0 ? 'title' : 'ch') : 'blank')));
+    L.paraInfo.forEach((p) => {
+      for (let c = 0; c < D.indent; c++) if (!L.rows[p.startRow][c]) K[p.startRow][c] = 'pad';
+      for (let r = p.startRow; r <= p.endRow; r++) for (let c = 0; c < D.cols; c++) {
+        if (K[r][c] !== 'blank') continue;
+        if (r === p.endRow && c > p.lastCol) K[r][c] = 'tail'; else K[r][c] = 'rule';
+      }
+    });
+    return K;
+  }
+  function cellIndex(R, r, c) { return (r - R.M.off) * R.D.cols + c + 1; }
+
+  function renderSheet(R) {
+    const D = R.D, L = R.L, M = R.M, K = cellKinds(R);
+    const box = $('sheet').parentNode;
+    const rnW = window.innerWidth <= 520 ? 24 : 34;
+    const cell = Math.max(16, Math.min(26, Math.floor((box.clientWidth - rnW - 2) / D.cols)));
+    const el = $('sheet'); el.style.setProperty('--cols', D.cols); el.style.setProperty('--cell', cell + 'px');
+    const H = [];
+    L.rows.forEach((row, r) => {
+      const lab = r < M.off ? '' : String(r - M.off + 1);
+      H.push('<div class="rn">' + lab + '</div>');
+      row.forEach((x, c) => {
+        const cls = ['c']; if (c === 0) cls.push('first');
+        const k = K[r][c];
+        if (k === 'title') cls.push('title'); else if (k === 'pad') cls.push('pad'); else if (k === 'rule') cls.push('rule');
+        if (x && x.extra.length) cls.push('sq');
+        if (x && x.k === 'half') cls.push('half');
+        if (x && x.w === 2) cls.push(x.part ? 'w2b' : 'w2a');
+        const idx = r >= M.off ? cellIndex(R, r, c) : 0;
+        if (idx === M.lastIdx) cls.push('last');
+        if (idx > M.lastIdx) cls.push('after');
+        let mk = '';
+        if (idx === D.target) { cls.push('mark'); mk = ' data-mark="' + D.target + '"'; }
+        let s = '';
+        if (x) { s = x.w === 2 ? esc(x.s.slice(x.part, x.part + 1)) : esc(x.s); if (x.extra.length) s += '<span class="ex">' + esc(x.extra.join('')) + '</span>'; }
+        H.push('<div class="' + cls.join(' ') + '"' + mk + '>' + s + '</div>');
+      });
+      if (r === M.markRow - 1) H.push('<div class="rowline"><span>' + D.target + ' 格线</span></div>');
+    });
+    el.innerHTML = H.join('');
+  }
+  function renderParas(R) {
+    const D = R.D, M = R.M, n = R.L.paraInfo.length;
+    $('paras').innerHTML = '<tr><th>段</th><th>开头</th><th>汉字</th><th>标点</th><th class="hide-s">从第几行</th><th>占几行</th><th>段尾空格</th></tr>' +
+      R.L.paraInfo.map((p) => '<tr><td>' + (p.index + 1) + '</td><td>' + esc(D.paras[p.index].slice(0, 10)) + '…</td><td>' + p.han + '</td><td>' + p.punct + '</td><td class="hide-s">' + (p.startRow - M.off + 1) + '</td><td>' + p.rowsUsed + '</td><td>' + (p.index === n - 1 ? '—' : p.tailBlank) + '</td></tr>').join('');
+  }
+  function sugList(sg) {
+    $('sugCard').style.display = sg.length ? '' : 'none';
+    $('sugs').innerHTML = sg.map((s, k) => '<div class="sug"><span>' + esc(s.text) + '</span><button class="ghost" data-sug="' + s.id + '" data-k="' + k + '">代回</button></div>').join('');
+    [].forEach.call($('sugs').querySelectorAll('button'), (b) => b.addEventListener('click', () => { state = copy(sg[+b.dataset.k].apply); fill(); run(); }));
+  }
+
+  function run() {
+    KEYS.forEach((k) => $(k).classList.remove('bad'));
+    $('error').style.display = 'none';
+    const raw = String(state.text || '');
+    $('textInfo').textContent = '现在 ' + raw.length + ' / ' + C.MAX_TEXT + ' 个字符（含标点与换行），' + C.splitParas(raw).length + ' 段。';
+    try {
+      const R = C.calculate(state);
+      const sg = C.suggestions(state, R);
+      $('out').style.display = '';
+      $('stamp').textContent = R.stamp; $('stamp').className = 'stamp ' + R.verdict;
+      $('big').innerHTML = bigText(R);
+      $('sumTxt').textContent = R.summary;
+      $('facts').innerHTML = R.facts.map((f) => '<li>' + esc(f) + '</li>').join('');
+      last = { r: R, sg };
+      renderSheet(R); renderParas(R); sugList(sg);
+    } catch (e) {
+      last = null;
+      if (e.field) { const el = $(e.field); if (el) el.classList.add('bad'); }
+      $('error').textContent = '排不了：' + e.message; $('error').style.display = 'block';
+      $('out').style.display = 'none';
+    }
+    save();
+  }
+
+  /* ── 导出 ── */
+  function stamp() { const d = new Date(), z = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); }
+  function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+  function fit(g, t, w) { let s = String(t); if (g.measureText(s).width <= w) return s; while (s.length > 1 && g.measureText(s + '…').width > w) s = s.slice(0, -1); return s + '…'; }
+  function wrap(g, t, w) {
+    const NOHEAD = '，。、；：！？）」』”%·→｜';
+    const out = []; let line = [];
+    const toks = String(t).match(/[−-]?[0-9][0-9.,]*(\s?(格|行|段|个|字))?|[A-Za-z_][A-Za-z0-9_.\-]*|[\s\S]/g) || [];
+    const width = (a) => g.measureText(a.join('')).width;
+    for (const tk of toks) {
+      if (line.length && width(line.concat([tk])) > w) {
+        let carry = [tk];
+        while (line.length > 1 && (NOHEAD.indexOf(carry[0][0]) >= 0 || '（「『“'.indexOf(line[line.length - 1]) >= 0)) carry.unshift(line.pop());
+        out.push(line.join(''));
+        line = carry; if (/^\s+$/.test(line[0])) line.shift();
+      } else line.push(tk);
+    }
+    if (line.length) out.push(line.join('')); return out;
+  }
+  /* 在画布上画稿纸的一段行（r0..r1），格宽 cs */
+  function drawRows(g, R, r0, r1, X, Y, cs) {
+    const D = R.D, L = R.L, M = R.M, K = cellKinds(R), rnW = 44;
+    const fillK = { pad: '#f4ece0', rule: '#fde0d4' };
+    let y = Y;
+    for (let r = r0; r <= r1; r++) {
+      g.fillStyle = '#a28d7a'; g.font = '15px ' + FF; g.textAlign = 'right'; g.textBaseline = 'middle';
+      if (r >= M.off) g.fillText(String(r - M.off + 1), X + rnW - 8, y + cs / 2);
+      for (let c = 0; c < D.cols; c++) {
+        const x = L.rows[r][c], cx = X + rnW + c * cs, k = K[r][c];
+        const idx = r >= M.off ? cellIndex(R, r, c) : 0;
+        g.fillStyle = x && x.extra.length ? '#fff2bf' : fillK[k] || '#fffdf8'; g.fillRect(cx, y, cs, cs);
+        g.strokeStyle = '#e3b7a6'; g.lineWidth = 1; g.strokeRect(cx + 0.5, y + 0.5, cs, cs);
+        if (x) {
+          g.fillStyle = k === 'title' ? '#7a3b1d' : '#2a2622';
+          g.font = (x.k === 'half' ? Math.round(cs * 0.42) : Math.round(cs * 0.6)) + 'px ' + FF;
+          let s = x.w === 2 ? x.s.slice(x.part, x.part + 1) : x.s;
+          g.textAlign = x.w === 2 ? (x.part ? 'left' : 'right') : 'center';
+          const tx = x.w === 2 ? (x.part ? cx : cx + cs) : cx + cs / 2;
+          if (x.extra.length) { g.textAlign = 'center'; g.fillText(s, cx + cs * 0.38, y + cs / 2 + 1); g.font = Math.round(cs * 0.42) + 'px ' + FF; g.fillText(x.extra.join(''), cx + cs * 0.82, y + cs / 2 + 1); }
+          else g.fillText(s, tx, y + cs / 2 + 1);
+        }
+        if (idx === M.lastIdx) { g.strokeStyle = '#2a2622'; g.lineWidth = 3; g.strokeRect(cx + 2, y + 2, cs - 3, cs - 3); }
+        if (idx === D.target) { g.fillStyle = '#b3412f'; g.fillRect(cx + cs - 4, y, 4, cs); }
+      }
+      y += cs;
+      if (r === M.markRow - 1) {
+        g.fillStyle = '#b3412f'; g.fillRect(X, y + 1, rnW + D.cols * cs, 4);
+        g.font = 'bold 15px ' + FF; const t = D.target + ' 格线', tw = g.measureText(t).width;
+        g.fillRect(X + rnW, y + 4, tw + 14, 20); g.fillStyle = '#fff'; g.textAlign = 'left'; g.fillText(t, X + rnW + 7, y + 14);
+        y += 26;
+      }
+    }
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    return y;
+  }
+  function drawPNG(Lx) {
+    const R = Lx.r, D = R.D, M = R.M;
+    const Wd = 1080, H = 1350, X = 64, TW = 952;
+    const cv = document.createElement('canvas'); cv.width = Wd; cv.height = H;
+    const g = cv.getContext('2d');
+    g.fillStyle = '#f3efe6'; g.fillRect(0, 0, Wd, H);
+    g.fillStyle = '#fffdf8'; g.fillRect(32, 32, Wd - 64, H - 64);
+    g.fillStyle = '#7a3b1d'; g.fillRect(32, 32, Wd - 64, 10);
+    g.fillStyle = '#5c554c'; g.font = '22px ' + FF;
+    g.fillText(fit(g, NAME + (D.title ? ' · 《' + D.title + '》' : '') + ' · 每行 ' + D.cols + ' 格 · 要求 ' + D.target + (D.limit ? '–' + D.limit : '') + ' 格', TW - 280), X, 92);
+    g.fillStyle = '#2a2622';
+    let hs = 40; g.font = 'bold ' + hs + 'px ' + FF;
+    const big = plain(bigText(R));
+    while (hs > 26 && g.measureText(big).width > TW - 280) { hs -= 2; g.font = 'bold ' + hs + 'px ' + FF; }
+    g.fillText(fit(g, big, TW - 280), X, 156);
+    g.save(); g.translate(X + TW - 120, 128); g.rotate(-0.06);
+    g.strokeStyle = g.fillStyle = COL[R.verdict]; g.lineWidth = 4;
+    g.font = 'bold 28px ' + FF; const sw = Math.max(190, g.measureText(R.stamp).width + 40);
+    g.strokeRect(-sw / 2, -32, sw, 56); g.textAlign = 'center'; g.fillText(R.stamp, 0, 6); g.restore();
+    let y = 214;
+    g.fillStyle = '#2a2622'; g.font = 'bold 24px ' + FF;
+    wrap(g, R.summary, TW).slice(0, 3).forEach((l) => { g.fillText(l, X, y); y += 34; });
+    y += 4;
+    g.font = '19px ' + FF; g.fillStyle = '#5c554c';
+    for (const f of R.facts) { const ls = wrap(g, '· ' + f, TW); if (y + ls.length * 27 > 520) break; ls.forEach((l) => { g.fillText(l, X, y); y += 27; }); y += 2; }
+    y += 16;
+    /* 稿纸截取：要求格数那一行附近 + 末格那一行 */
+    const cs = Math.min(40, Math.floor((TW - 44) / D.cols));
+    const lastRow = M.endRow, markRowIdx = Math.min(M.markRow - 1, R.L.rows.length - 1);
+    const lo = Math.max(M.off, Math.min(markRowIdx, lastRow) - 2), hi = Math.min(R.L.rows.length - 1, Math.max(markRowIdx, lastRow) + 1);
+    const sgH = Lx.sg.reduce((a, sgi) => a + wrap(g, '· 改一样：' + sgi.text, TW).length * 27 + 3, 0);
+    const avail = Math.max(3, Math.floor((H - 150 - sgH - 34 - 40 - y) / cs));
+    let r1 = hi, r0 = Math.max(M.off, r1 - avail + 1), cut = r0 > lo;
+    if (cut && markRowIdx < r0) { r1 = Math.min(R.L.rows.length - 1, lastRow + 1); r0 = Math.max(M.off, r1 - avail + 1); }
+    cut = r0 > M.off;
+    g.fillStyle = '#2a2622'; g.font = 'bold 20px ' + FF;
+    g.fillText('稿纸上第 ' + (r0 - M.off + 1) + '–' + (r1 - M.off + 1) + ' 行' + (cut ? '（截末格附近）' : '') + '，黑框是末格', X, y); y += 14;
+    y = drawRows(g, R, r0, r1, X, y, cs) + 34;
+    g.font = '19px ' + FF; g.fillStyle = '#2a2622';
+    for (const sgi of Lx.sg) {
+      const ls = wrap(g, '· 改一样：' + sgi.text, TW);
+      if (y + ls.length * 27 > H - 110) break;
+      ls.forEach((l) => { g.fillText(l, X, y); y += 27; }); y += 3;
+    }
+    g.fillStyle = '#82796d'; g.font = '18px ' + FF;
+    ['按常见稿纸书写习惯排格（段首空格、标点不落行首），不是任何考试的官方评分细则。', '默认例文是虚构的。不评价文章好坏。'].forEach((l, i) => g.fillText(l, X, H - 76 + i * 27));
+    return Promise.resolve(cv);
+  }
+  function backup() {
+    const R = last.r, M = R.M;
+    return { app: NAME, version: 1, savedAt: stamp(), input: copy(state), result: { verdict: R.verdict, stamp: R.stamp, summary: R.summary, lastCell: M.lastIdx, position: R.pos, diff: M.diff, overLimit: M.overLimit,
+      han: M.han, punct: M.punct, half: M.half, filled: M.filled, blank: M.blank, blankWhy: { indent: R.blankWhy.indent, paraTail: R.blankWhy.tail, title: R.blankWhy.titleBlank, rule: R.blankWhy.rule },
+      paragraphs: R.L.paraInfo.map((p) => ({ han: p.han, punct: p.punct, rows: p.rowsUsed, tailBlank: p.tailBlank })) } };
+  }
+  function init() {
+    let dt = null;
+    KEYS.forEach((k) => {
+      const el = $(k);
+      if (k === 'countTitle') el.addEventListener('change', () => { state[k] = el.checked ? '1' : '0'; run(); });
+      else el.addEventListener('input', () => { state[k] = el.value; save(); clearTimeout(dt); dt = setTimeout(run, 150); });
+    });
+    PRESETS.forEach((p) => {
+      const b = document.createElement('button'); b.className = 'ghost'; b.textContent = p[0];
+      b.addEventListener('click', () => { state = copy(p[1]); fill(); run(); });
+      $('presets').appendChild(b);
+    });
+    $('reset').addEventListener('click', () => { state = copy(DEFAULT); fill(); run(); });
+    $('dlCSV').addEventListener('click', () => { if (last) download(NAME + '.csv', new Blob(['\ufeff' + C.toCSV(last.r, stamp())], { type: 'text/csv;charset=utf-8' })); });
+    $('dlMD').addEventListener('click', () => { if (last) download(NAME + '.md', new Blob([C.toMD(last.r, stamp(), last.sg)], { type: 'text/markdown;charset=utf-8' })); });
+    $('dlJSON').addEventListener('click', () => { if (last) download(NAME + '-备份.json', new Blob([JSON.stringify(backup(), null, 2)], { type: 'application/json' })); });
+    $('dlPNG').addEventListener('click', () => { if (last) drawPNG(last).then((cv) => cv.toBlob((b) => download(NAME + '-1080x1350.png', b), 'image/png')); });
+    let rt = null; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (last) renderSheet(last.r); }, 150); });
+    state = load() || copy(DEFAULT);
+    fill(); run();
+    window.__ex = { last: () => last, state: () => state, presets: PRESETS, DEFAULT, drawPNG, backup, bigPlain: () => plain(bigText(last.r)) };
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+  </script>
+</body>
+</html>
